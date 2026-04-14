@@ -131,7 +131,7 @@ GameObject:
   - component: {fileID: 142680384}
   - component: {fileID: 142680383}
   m_Layer: 0
-  m_Name: "\u80CC\u666F (1)"
+  m_Name: background
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -226,8 +226,8 @@ Transform:
   m_GameObject: {fileID: 142680382}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 5}
-  m_LocalScale: {x: 1.142985, y: 1.142985, z: 1.142985}
+  m_LocalPosition: {x: 0, y: 0, z: 3.7}
+  m_LocalScale: {x: 1.8713692, y: 1.9820796, z: 1.142985}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -363,8 +363,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 519420028}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.16490313, y: 0.0000000136126594, z: -0.0000000022759283, w: 0.98630977}
-  m_LocalPosition: {x: -0.06, y: 5.2, z: -9.36}
+  m_LocalRotation: {x: 0.024465472, y: 1.6570886e-10, z: -4.055359e-12, w: 0.99970067}
+  m_LocalPosition: {x: -0.06, y: 2.6399999, z: -7.44}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -528,7 +528,7 @@ GameObject:
   - component: {fileID: 1188646276}
   - component: {fileID: 1188646278}
   m_Layer: 0
-  m_Name: "\u80CC\u666F"
+  m_Name: ground
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -603,7 +603,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
   m_LocalPosition: {x: 0, y: -1.85, z: -0}
-  m_LocalScale: {x: 1.142985, y: 1.142985, z: 1.142985}
+  m_LocalScale: {x: 2.0916626, y: 1.0793779, z: 1.142985}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -783,7 +783,7 @@ MonoBehaviour:
       Size: {x: 0.8, y: 0.8}
       Offset: {x: 0, y: 0}
   CenterOnActivate: 1
-  TargetOffset: {x: 0, y: 0, z: 0}
+  TargetOffset: {x: 0, y: 0.45, z: 0.7}
   Damping: {x: 0.5, y: 0.5}
   Lookahead:
     Enabled: 0
@@ -808,7 +808,7 @@ MonoBehaviour:
     AngularDampingMode: 0
     RotationDamping: {x: 1, y: 1, z: 1}
     QuaternionDamping: 1
-  FollowOffset: {x: 0, y: 3.44, z: -10}
+  FollowOffset: {x: 0, y: 0.88, z: -8.08}
 --- !u!114 &1962775450
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -860,8 +860,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1962775447}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.16490313, y: 0.0000000136126594, z: -0.0000000022759283, w: 0.98630977}
-  m_LocalPosition: {x: -0.06, y: 5.2, z: -9.36}
+  m_LocalRotation: {x: 0.024465472, y: 1.6570885e-10, z: -4.0553745e-12, w: 0.99970067}
+  m_LocalPosition: {x: -0.06, y: 2.6399999, z: -7.44}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -876,9 +876,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1972735768}
-  - component: {fileID: 1972735767}
   - component: {fileID: 1972735769}
   - component: {fileID: 1972735770}
+  - component: {fileID: 1972735771}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -886,20 +886,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1972735767
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1972735764}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 51c4fe946564f99418d7a61e20ad7706, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Player
-  speedX: 0
-  speedY: 0
 --- !u!4 &1972735768
 Transform:
   m_ObjectHideFlags: 0
@@ -966,6 +952,19 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 112
   m_CollisionDetection: 0
+--- !u!114 &1972735771
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1972735764}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 51c4fe946564f99418d7a61e20ad7706, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Player
+  speed: 3
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
