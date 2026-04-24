@@ -1,7 +1,9 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public class Player: MonoBehaviour
 {
+    public GameObject myBag;
+    bool isOpen;
     Vector3 direction;
     [Header("移動速度")]
     public float speed;
@@ -9,6 +11,7 @@ public class Player: MonoBehaviour
    
     void Update()
     {
+        //角色移動
         if (Input.GetKey(KeyCode.UpArrow))
         {
             Debug.Log("W");
@@ -32,6 +35,13 @@ public class Player: MonoBehaviour
             Debug.Log("A");
             direction = Vector3.left * (speed * Time.deltaTime);
             transform.Translate(direction);
+        }
+
+        //開啟背包
+        if (Input.GetKeyDown(KeyCode.B))
+        {
+            isOpen = !isOpen;
+            myBag.SetActive(isOpen);
         }
     }
 }
