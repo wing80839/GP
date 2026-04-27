@@ -14,25 +14,25 @@ public class Player: MonoBehaviour
         //角色移動
         if (Input.GetKey(KeyCode.UpArrow))
         {
-            Debug.Log("W");
+            //Debug.Log("W");
             direction = Vector3.forward * (speed * Time.deltaTime);
             transform.Translate(direction);
         }
         if (Input.GetKey(KeyCode.RightArrow))
         {
-            Debug.Log("D");
+            //Debug.Log("D");
             direction = Vector3.right * (speed * Time.deltaTime);
             transform.Translate(direction);
         }
         if (Input.GetKey(KeyCode.DownArrow))
         {
-            Debug.Log("S");
+            //Debug.Log("S");
             direction = Vector3.back * (speed * Time.deltaTime);
             transform.Translate(direction);
         }
         if (Input.GetKey(KeyCode.LeftArrow))
         {
-            Debug.Log("A");
+            //Debug.Log("A");
             direction = Vector3.left * (speed * Time.deltaTime);
             transform.Translate(direction);
         }
