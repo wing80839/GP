@@ -2,6 +2,8 @@
 
 public class Sign : MonoBehaviour
 {
+
+
     public Transform playerTrans;
 
     public GameObject signSprite;
@@ -19,22 +21,30 @@ public class Sign : MonoBehaviour
         if (canPress && Input.GetKeyDown(KeyCode.X))
         {
             targetItem.TriggerAction();
+
+            if (targetItem != null)
+            {
+                targetItem.TriggerAction();
+
+                canPress = false;
+            }
+
         }
     }
 
     private void OnCollisionEnter(Collision collision)
     {
 
-        if(collision.gameObject.CompareTag("Interactable"))
+        if(collision.gameObject.CompareTag("Player"))
         {
             canPress = true;
-            targetItem = collision.gameObject.GetComponent<Interactable>();
+            targetItem = GetComponent<Interactable>();
         }
     }
     private void OnCollisionExit(Collision collision)
     {
 
-        if (collision.gameObject.CompareTag("Interactable"))
+        if (collision.gameObject.CompareTag("Player"))
         {
             canPress = false;
         }
