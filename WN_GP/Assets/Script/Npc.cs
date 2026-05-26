@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class Npc : MonoBehaviour
 {
@@ -24,6 +25,16 @@ public class Npc : MonoBehaviour
         if (collision.gameObject.CompareTag("Player"))
         {
             Debug.Log("玩家離開範圍");
+        }
+    }
+    
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.X))
+        {
+            gameObject.SetActive(false);
+            SceneManager.LoadScene("戰鬥");
+            return;
         }
     }
 }
