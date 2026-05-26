@@ -30,7 +30,7 @@ public class Npc : MonoBehaviour
     
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.X))
+        if (Input.GetKeyDown(KeyCode.F))
         {
             gameObject.SetActive(false);
             SceneManager.LoadScene("戰鬥");
