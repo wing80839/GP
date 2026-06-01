@@ -1,8 +1,8 @@
-using System;
+﻿using System;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public class Npc : MonoBehaviour
+public class Npc : MonoBehaviour, Interactable
 {
     private bool isPlayerNearby = false;
     
@@ -28,13 +28,19 @@ public class Npc : MonoBehaviour
         }
     }
     
-    void Update()
+
+    public void TriggerAction()
     {
-        if (Input.GetKeyDown(KeyCode.F))
-        {
-            gameObject.SetActive(false);
-            SceneManager.LoadScene("戰鬥");
-            return;
-        }
+        // 切換到戰鬥攝影機
+        CameraManager.Instance.ShowBattleCamera();
+
+        // 通知 BattleManager 進入戰鬥（傳入此 NPC）
+        BattleManager.Instance.EnterBattle(gameObject);
+
+        
+
+        //gameObject.SetActive(false);
+        //SceneManager.LoadScene("戰鬥");
+        return;
     }
 }

@@ -18,7 +18,7 @@ public class Sign : MonoBehaviour
         signSprite.SetActive(canPress);
         //signSprite.transform.localScale=playerTrans.localScale;
 
-        if (canPress && Input.GetKeyDown(KeyCode.X))
+        if (canPress && Input.GetKeyDown(KeyCode.F))
         {
             targetItem.TriggerAction();
 

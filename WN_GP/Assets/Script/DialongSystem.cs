@@ -42,13 +42,13 @@ public class DialogSystem : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.X) && index == textList.Count)
+        if (Input.GetKeyDown(KeyCode.F) && index == textList.Count)
         {
             gameObject.SetActive(false);
             return;
         }
 
-        if (Input.GetKeyDown(KeyCode.X))
+        if (Input.GetKeyDown(KeyCode.F))
         {
             textlabel.text = textList[index];
             index++;
