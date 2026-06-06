@@ -1723,7 +1723,6 @@ GameObject:
   - component: {fileID: 587744460}
   - component: {fileID: 587744459}
   - component: {fileID: 587744458}
-  - component: {fileID: 587744457}
   m_Layer: 0
   m_Name: "\u6230\u9B25\u651D\u5F71\u6A5F"
   m_TagString: Untagged
@@ -1746,18 +1745,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1598013323}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &587744457
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 587744455}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 707cc02119f140f4cbe0ffd99b1117a9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BattleManager
 --- !u!114 &587744458
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4423,6 +4410,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1598013323}
+  - component: {fileID: 1598013324}
   m_Layer: 0
   m_Name: "\u6230\u9B25"
   m_TagString: Untagged
@@ -4451,6 +4439,20 @@ Transform:
   - {fileID: 619813723}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1598013324
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1598013322}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 707cc02119f140f4cbe0ffd99b1117a9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BattleManager
+  battleCanvas: {fileID: 1598013322}
+  mainCanvas: {fileID: 22742883}
 --- !u!1 &1604097749
 GameObject:
   m_ObjectHideFlags: 0
