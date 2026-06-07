@@ -1,52 +1,66 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-/// <summary>
-/// 自動在右側生成音符，往左移動到判定線。
-/// 掛在場景中的 GameManager 或 BattleCanvas 物件上。
-/// </summary>
 public class RhythmSpawner : MonoBehaviour
 {
     [Header("音符 Prefab（上下各一）")]
-    [SerializeField] private GameObject notePrefabJ;  // J 軌道音符
-    [SerializeField] private GameObject notePrefabK;  // K 軌道音符
+    [SerializeField] private GameObject notePrefabJ;
+    [SerializeField] private GameObject notePrefabK;
 
     [Header("戰鬥攝影機（音符位置以此為基準）")]
-    [SerializeField] private Camera battleCamera;       // 拖入戰鬥攝影機
+    [SerializeField] private Camera battleCamera;
 
     [Header("生成位置（相對攝影機的偏移）")]
-    [SerializeField] private float spawnOffsetX = 8f;  // 攝影機右側幾個單位生成
-    [SerializeField] private float laneJY = 1f;  // J 軌道 Y 偏移
-    [SerializeField] private float laneKY = -1f;  // K 軌道 Y 偏移
+    [SerializeField] private float spawnOffsetX = 8f;
+    [SerializeField] private float laneJY = 1f;
+    [SerializeField] private float laneKY = -1f;
     [SerializeField] private float laneZ = 0f;
 
     [Header("音符設定")]
-    [SerializeField] private float noteSpeed = 8f;  // 移動速度（世界單位/秒）
-    [SerializeField] private float missOffsetX = -8f;  // 攝影機左側幾個單位算 Miss
+    [SerializeField] private float noteSpeed = 8f;
+    [SerializeField] private float missOffsetX = -8f;
 
     [Header("生成節奏")]
-    [SerializeField] private float spawnInterval = 1.4f;  // 每隔幾秒生成一顆
+    [SerializeField] private float spawnInterval = 1.4f;
 
-    // 固定的出現順序（可改成讀譜面檔）
     private RhythmNote.Lane[] _pattern = {
-        RhythmNote.Lane.J,
-        RhythmNote.Lane.K,
-        RhythmNote.Lane.J,
-        RhythmNote.Lane.J,
-        RhythmNote.Lane.K,
-        RhythmNote.Lane.K,
-        RhythmNote.Lane.J,
-        RhythmNote.Lane.K,
+        RhythmNote.Lane.J, RhythmNote.Lane.K,
+        RhythmNote.Lane.J, RhythmNote.Lane.J,
+        RhythmNote.Lane.K, RhythmNote.Lane.K,
+        RhythmNote.Lane.J, RhythmNote.Lane.K,
     };
+
     private int _patternIdx = 0;
+    private Coroutine _spawnCoroutine = null;
 
     private void Start()
     {
-        // 若沒有指定戰鬥攝影機，退回使用 Main Camera
         if (battleCamera == null)
             battleCamera = Camera.main;
 
-        StartCoroutine(SpawnLoop());
+        // 不自動開始，等 BattleController 呼叫 StartSpawning()
+    }
+
+    /// <summary>進入戰鬥時由 BattleController 呼叫</summary>
+    public void StartSpawning()
+    {
+        _patternIdx = 0;
+        if (_spawnCoroutine != null) StopCoroutine(_spawnCoroutine);
+        _spawnCoroutine = StartCoroutine(SpawnLoop());
+    }
+
+    /// <summary>離開戰鬥時由 BattleController 呼叫，停止並清除音符</summary>
+    public void StopSpawning()
+    {
+        if (_spawnCoroutine != null)
+        {
+            StopCoroutine(_spawnCoroutine);
+            _spawnCoroutine = null;
+        }
+
+        // 清除所有還在場景上的音符
+        foreach (var note in FindObjectsByType<RhythmNote>(FindObjectsSortMode.None))
+            Destroy(note.gameObject);
     }
 
     private IEnumerator SpawnLoop()
@@ -64,7 +78,6 @@ public class RhythmSpawner : MonoBehaviour
         GameObject prefab = lane == RhythmNote.Lane.J ? notePrefabJ : notePrefabK;
         if (prefab == null) return;
 
-        // 以戰鬥攝影機的世界座標為基準計算生成點
         float camX = battleCamera.transform.position.x;
         float camY = battleCamera.transform.position.y;
         float spawnX = camX + spawnOffsetX;
@@ -72,11 +85,9 @@ public class RhythmSpawner : MonoBehaviour
         float y = camY + (lane == RhythmNote.Lane.J ? laneJY : laneKY);
 
         Vector3 pos = new Vector3(spawnX, y, laneZ);
-
         GameObject obj = Instantiate(prefab, pos, Quaternion.identity);
         RhythmNote note = obj.GetComponent<RhythmNote>();
         if (note == null) note = obj.AddComponent<RhythmNote>();
-
         note.Init(lane, noteSpeed, missX);
     }
 }

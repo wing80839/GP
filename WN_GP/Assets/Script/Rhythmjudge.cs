@@ -1,37 +1,34 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
-using System.Collections.Generic;
+using TMPro;
 
-/// <summary>
-/// 負責偵測 J / K 按鍵，判定音符時機，顯示判定文字。
-/// 將此腳本掛在場景中的 GameManager 或 BattleCanvas 物件上。
-/// </summary>
 public class RhythmJudge : MonoBehaviour
 {
     public static RhythmJudge Instance { get; private set; }
 
-    [Header("判定線位置（世界座標 X）")]
-    [SerializeField] private float judgeLineX = -5f;
+    [Header("判定環的 Transform")]
+    [SerializeField] private Transform ringJTransform;
+    [SerializeField] private Transform ringKTransform;
 
-    [Header("判定範圍（世界單位）")]
-    [SerializeField] private float perfectRange = 0.4f;
-    [SerializeField] private float goodRange = 0.8f;
+    [Header("判定半徑")]
+    [SerializeField] private float judgeRadius = 3f;  // 調這個到剛好碰到算 Good
 
     [Header("UI")]
-    [SerializeField] private Text judgeText;   // 顯示 PERFECT / GOOD / MISS
-    [SerializeField] private Text comboText;   // 顯示 Combo 數字
+    [SerializeField] private TextMeshProUGUI hitText;
+    [SerializeField] private TextMeshProUGUI missText;
+    [SerializeField] private TextMeshProUGUI judgeText;
 
-    [Header("J / K 判定環（SpriteRenderer）")]
-    [SerializeField] private SpriteRenderer ringJ;
-    [SerializeField] private SpriteRenderer ringK;
+    [Header("判定環 SpriteRenderer")]
+    [SerializeField] private SpriteRenderer ringJSprite;
+    [SerializeField] private SpriteRenderer ringKSprite;
 
     [Header("判定環顏色")]
     [SerializeField] private Color ringNormalColor = new Color(1f, 1f, 1f, 0.3f);
     [SerializeField] private Color ringHitColor = new Color(1f, 0.88f, 0.2f, 1f);
 
-    // ── 內部狀態 ─────────────────────────────────────────────
-    private int combo = 0;
+    private int hitCount = 0;
+    private int missCount = 0;
 
     private void Awake()
     {
@@ -41,95 +38,76 @@ public class RhythmJudge : MonoBehaviour
 
     private void Start()
     {
-        SetRingColor(ringJ, ringNormalColor);
-        SetRingColor(ringK, ringNormalColor);
-        UpdateComboUI();
+        SetRingColor(ringJSprite, ringNormalColor);
+        SetRingColor(ringKSprite, ringNormalColor);
+        UpdateCountUI();
         if (judgeText) judgeText.text = "";
     }
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.J)) TryHit(RhythmNote.Lane.J, ringJ);
-        if (Input.GetKeyDown(KeyCode.K)) TryHit(RhythmNote.Lane.K, ringK);
+        if (Input.GetKeyDown(KeyCode.J)) TryHit(RhythmNote.Lane.J, ringJTransform, ringJSprite);
+        if (Input.GetKeyDown(KeyCode.K)) TryHit(RhythmNote.Lane.K, ringKTransform, ringKSprite);
     }
 
-    // ── 判定邏輯 ─────────────────────────────────────────────
-
-    private void TryHit(RhythmNote.Lane lane, SpriteRenderer ring)
+    private void TryHit(RhythmNote.Lane lane, Transform ringTransform, SpriteRenderer ringSprite)
     {
-        StartCoroutine(FlashRing(ring));
+        if (ringTransform == null) return;
+        StartCoroutine(FlashRing(ringSprite));
 
-        // 找最近的對應軌道音符
-        RhythmNote closest = FindClosestNote(lane);
-
-        if (closest == null)
-        {
-            // 空打
-            BreakCombo();
-            ShowJudge("MISS", Color.red);
-            return;
-        }
-
-        float dist = Mathf.Abs(closest.transform.position.x - judgeLineX);
-
-        if (dist <= perfectRange)
-        {
-            closest.SetJudged();
-            Destroy(closest.gameObject);
-            combo++;
-            UpdateComboUI();
-            ShowJudge("PERFECT", new Color(1f, 0.88f, 0.2f));
-        }
-        else if (dist <= goodRange)
-        {
-            closest.SetJudged();
-            Destroy(closest.gameObject);
-            combo++;
-            UpdateComboUI();
-            ShowJudge("GOOD", new Color(0.5f, 0.9f, 0.6f));
-        }
-        else
-        {
-            // 按太早或太晚
-            BreakCombo();
-            ShowJudge("MISS", Color.red);
-        }
-    }
-
-    /// <summary>找同軌道中最靠近判定線的音符</summary>
-    private RhythmNote FindClosestNote(RhythmNote.Lane lane)
-    {
-        RhythmNote best = null;
+        // 找同軌道最近的音符（只比較 X 軸距離，忽略 Y / Z 差異）
+        RhythmNote bestNote = null;
         float bestDist = float.MaxValue;
 
         foreach (var note in FindObjectsByType<RhythmNote>(FindObjectsSortMode.None))
         {
             if (note.lane != lane) continue;
-            float d = Mathf.Abs(note.transform.position.x - judgeLineX);
-            if (d < bestDist) { bestDist = d; best = note; }
+            float d = Mathf.Abs(note.transform.position.x - ringTransform.position.x);
+            if (d < bestDist) { bestDist = d; bestNote = note; }
         }
-        return best;
+
+        // 沒有音符或距離太遠 → 空按忽略
+        if (bestNote == null || bestDist > judgeRadius) return;
+
+        // 越靠近中心越好：前半段 Perfect，後半段 Good
+        if (bestDist <= judgeRadius * 0.5f)
+        {
+            HitNote(bestNote);
+            ShowJudge("PERFECT", new Color(1f, 0.88f, 0.2f));
+        }
+        else
+        {
+            HitNote(bestNote);
+            ShowJudge("GOOD", new Color(0.5f, 0.9f, 0.6f));
+        }
     }
 
-    // ── Miss（音符自動超線呼叫）──────────────────────────────
+    private void HitNote(RhythmNote note)
+    {
+        note.SetJudged();
+        Destroy(note.gameObject);
+        hitCount++;
+        UpdateCountUI();
+    }
 
     public void OnNoteMiss()
     {
-        BreakCombo();
+        missCount++;
+        UpdateCountUI();
         ShowJudge("MISS", Color.red);
     }
 
-    // ── UI 輔助 ──────────────────────────────────────────────
-
-    private void BreakCombo()
+    public void ResetCount()
     {
-        combo = 0;
-        UpdateComboUI();
+        hitCount = 0;
+        missCount = 0;
+        UpdateCountUI();
     }
 
-    private void UpdateComboUI()
+    private void UpdateCountUI()
     {
-        if (comboText) comboText.text = combo > 1 ? $"{combo} COMBO" : "";
+        if (hitText) hitText.text = $"O：{hitCount}";
+        if (missText) missText.text = $"X：{missCount}";
     }
 
     private Coroutine _judgeCoroutine;
