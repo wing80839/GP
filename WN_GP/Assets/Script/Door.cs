@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-public class Sign : MonoBehaviour
+public class Door : MonoBehaviour
 {
 
 
@@ -12,6 +12,8 @@ public class Sign : MonoBehaviour
 
     private bool canPress;
     
+    // 傳送位置(用空物件)
+    public Transform teleportTarget;
 
 
     private void Update()
@@ -21,8 +23,10 @@ public class Sign : MonoBehaviour
 
         if (canPress && Input.GetKeyDown(KeyCode.F))
         {
-            
 
+            // 傳送玩家
+            playerTrans.position = teleportTarget.position;
+            
             if (targetItem != null)
             {
                 targetItem.TriggerAction();
