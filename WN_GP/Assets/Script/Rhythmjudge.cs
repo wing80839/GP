@@ -12,12 +12,17 @@ public class RhythmJudge : MonoBehaviour
     [SerializeField] private Transform ringKTransform;
 
     [Header("判定半徑")]
-    [SerializeField] private float judgeRadius = 3f;  // 調這個到剛好碰到算 Good
+    [SerializeField] private float judgeRadius = 3f;
 
     [Header("UI")]
     [SerializeField] private TextMeshProUGUI hitText;
     [SerializeField] private TextMeshProUGUI missText;
     [SerializeField] private TextMeshProUGUI judgeText;
+
+    [Header("結果畫面")]
+    [SerializeField] private GameObject resultPanel;
+    [SerializeField] private TextMeshProUGUI resultText;
+    [SerializeField] private Button returnButton;
 
     [Header("判定環 SpriteRenderer")]
     [SerializeField] private SpriteRenderer ringJSprite;
@@ -42,12 +47,17 @@ public class RhythmJudge : MonoBehaviour
         SetRingColor(ringKSprite, ringNormalColor);
         UpdateCountUI();
         if (judgeText) judgeText.text = "";
+        if (resultPanel) resultPanel.SetActive(false);
+        if (returnButton) returnButton.onClick.AddListener(OnReturnClicked);
     }
 
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.J)) TryHit(RhythmNote.Lane.J, ringJTransform, ringJSprite);
         if (Input.GetKeyDown(KeyCode.K)) TryHit(RhythmNote.Lane.K, ringKTransform, ringKSprite);
+        // 結果畫面顯示時按 F 返回
+        if (resultPanel != null && resultPanel.activeSelf && Input.GetKeyDown(KeyCode.F))
+            OnReturnClicked();
     }
 
     private void TryHit(RhythmNote.Lane lane, Transform ringTransform, SpriteRenderer ringSprite)
@@ -55,7 +65,6 @@ public class RhythmJudge : MonoBehaviour
         if (ringTransform == null) return;
         StartCoroutine(FlashRing(ringSprite));
 
-        // 找同軌道最近的音符（只比較 X 軸距離，忽略 Y / Z 差異）
         RhythmNote bestNote = null;
         float bestDist = float.MaxValue;
 
@@ -66,10 +75,8 @@ public class RhythmJudge : MonoBehaviour
             if (d < bestDist) { bestDist = d; bestNote = note; }
         }
 
-        // 沒有音符或距離太遠 → 空按忽略
         if (bestNote == null || bestDist > judgeRadius) return;
 
-        // 越靠近中心越好：前半段 Perfect，後半段 Good
         if (bestDist <= judgeRadius * 0.5f)
         {
             HitNote(bestNote);
@@ -95,6 +102,37 @@ public class RhythmJudge : MonoBehaviour
         missCount++;
         UpdateCountUI();
         ShowJudge("MISS", Color.red);
+    }
+
+    // 音符全部結束後由 RhythmSpawner 呼叫
+    public void OnBattleEnd()
+    {
+        StartCoroutine(ShowResultRoutine());
+    }
+
+    private IEnumerator ShowResultRoutine()
+    {
+        yield return new WaitForSeconds(0.8f);
+
+        if (resultPanel == null) yield break;
+
+        bool isWin = hitCount >= missCount;
+        resultPanel.SetActive(true);
+
+        if (resultText)
+        {
+            resultText.text = isWin ? "戰鬥勝利" : "戰鬥失敗";
+            resultText.color = isWin ? new Color(1f, 0.88f, 0.2f) : new Color(0.8f, 0.3f, 0.3f);
+        }
+    }
+
+    private void OnReturnClicked()
+    {
+        if (resultPanel) resultPanel.SetActive(false);
+        ResetCount();
+        // 跳回戰鬥前記錄的場景
+        string returnScene = BattleManager.Instance.PreviousSceneName;
+        UnityEngine.SceneManagement.SceneManager.LoadScene(returnScene);
     }
 
     public void ResetCount()

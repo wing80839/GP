@@ -23,6 +23,9 @@ public class RhythmSpawner : MonoBehaviour
     [Header("生成節奏")]
     [SerializeField] private float spawnInterval = 1.4f;
 
+    [Header("譜面設定")]
+    [SerializeField] private int totalNotes = 30;  // 總共出幾個音符
+
     private RhythmNote.Lane[] _pattern = {
         RhythmNote.Lane.J, RhythmNote.Lane.K,
         RhythmNote.Lane.J, RhythmNote.Lane.J,
@@ -31,25 +34,23 @@ public class RhythmSpawner : MonoBehaviour
     };
 
     private int _patternIdx = 0;
+    private int _spawnedCount = 0;
     private Coroutine _spawnCoroutine = null;
 
     private void Start()
     {
         if (battleCamera == null)
             battleCamera = Camera.main;
-
-        // 不自動開始，等 BattleController 呼叫 StartSpawning()
     }
 
-    /// <summary>進入戰鬥時由 BattleController 呼叫</summary>
     public void StartSpawning()
     {
         _patternIdx = 0;
+        _spawnedCount = 0;
         if (_spawnCoroutine != null) StopCoroutine(_spawnCoroutine);
         _spawnCoroutine = StartCoroutine(SpawnLoop());
     }
 
-    /// <summary>離開戰鬥時由 BattleController 呼叫，停止並清除音符</summary>
     public void StopSpawning()
     {
         if (_spawnCoroutine != null)
@@ -57,20 +58,27 @@ public class RhythmSpawner : MonoBehaviour
             StopCoroutine(_spawnCoroutine);
             _spawnCoroutine = null;
         }
-
-        // 清除所有還在場景上的音符
         foreach (var note in FindObjectsByType<RhythmNote>(FindObjectsSortMode.None))
             Destroy(note.gameObject);
     }
 
     private IEnumerator SpawnLoop()
     {
-        while (true)
+        // 生成到達總數為止
+        while (_spawnedCount < totalNotes)
         {
             SpawnNote(_pattern[_patternIdx % _pattern.Length]);
             _patternIdx++;
+            _spawnedCount++;
             yield return new WaitForSeconds(spawnInterval);
         }
+
+        // 等最後一個音符走完判定區
+        float travelTime = (Mathf.Abs(spawnOffsetX) + Mathf.Abs(missOffsetX)) / noteSpeed;
+        yield return new WaitForSeconds(travelTime);
+
+        // 通知結果畫面
+        RhythmJudge.Instance?.OnBattleEnd();
     }
 
     private void SpawnNote(RhythmNote.Lane lane)

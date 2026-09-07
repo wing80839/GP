@@ -10,14 +10,17 @@ public class Sign : MonoBehaviour
 
     private Interactable targetItem;
 
+
     private bool canPress;
     
 
 
     private void Update()
     {
-        signSprite.SetActive(canPress);
-        //signSprite.transform.localScale=playerTrans.localScale;
+        if (signSprite != null)
+        {
+            signSprite.SetActive(canPress);
+        }
 
         if (canPress && Input.GetKeyDown(KeyCode.F))
         {
@@ -33,7 +36,7 @@ public class Sign : MonoBehaviour
         }
     }
 
-    private void OnCollisionEnter(Collision collision)
+    private void OnCollisionEnter2D(Collision2D collision)
     {
 
         if(collision.gameObject.CompareTag("Player"))
@@ -42,7 +45,7 @@ public class Sign : MonoBehaviour
             targetItem = GetComponent<Interactable>();
         }
     }
-    private void OnCollisionExit(Collision collision)
+    private void OnCollisionExit2D(Collision2D collision)
     {
 
         if (collision.gameObject.CompareTag("Player"))

@@ -4,15 +4,15 @@ using UnityEngine.SceneManagement;
 
 public class Npc : MonoBehaviour, Interactable
 {
-    private bool isPlayerNearby = false;
     
-    private void OnCollisionEnter(Collision collision)
+    
+    private void OnCollisionEnter2D(Collision2D collision)
     {
         {
             CatchCube(collision);
         }
     }
-    private void CatchCube(Collision collision)
+    private void CatchCube(Collision2D collision)
     {
         if (collision.gameObject.CompareTag("Player"))
         { 
@@ -20,7 +20,7 @@ public class Npc : MonoBehaviour, Interactable
         }
     }
 
-    private void OnCollisionExit(Collision collision)
+    private void OnCollisionExit2D(Collision2D collision)
     {
         if (collision.gameObject.CompareTag("Player"))
         {

@@ -2,6 +2,8 @@
 
 public class BattleManager: MonoBehaviour
 {
+    public string PreviousSceneName { get; private set; }
+
     public static BattleManager Instance { get; private set; }
 
     [Header("戰鬥相關物件（進入戰鬥才顯示）")]
@@ -29,6 +31,8 @@ public class BattleManager: MonoBehaviour
 
     public void EnterBattle(GameObject enemy)
     {
+        PreviousSceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+
         if (IsInBattle) return;
 
         CurrentEnemy = enemy;
