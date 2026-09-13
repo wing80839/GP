@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-public class MainMenuManager : MonoBehaviour
+public class BackMainMenu : MonoBehaviour
 {
     [SerializeField] private Button btnNew;
 
@@ -13,6 +13,6 @@ public class MainMenuManager : MonoBehaviour
 
     private void LoadLevel()
     {
-        SceneManager.LoadScene("第一關");
+        SceneManager.LoadScene("開頭");
     }
 }
