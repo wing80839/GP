@@ -6,12 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="c87600ff-7bef-4ed3-87eb-697061aac49a" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.WN_GP/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.WN_GP/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Script/MainMenuManager.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Script/MainMenuManager.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Script/Noise.shader" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Script/Noise.shader.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Script/NoiseImageEffect.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Script/NoiseImageEffect.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/暫定素材包/Unity-TMPro-Chinese-Font-master/Unity-TMPro-Chinese-Font-master/FontUpdatePackage.sln.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/暫定素材包/Cubic-11-main/Cubic-11-main/fonts/ttf/Cubic_11 SDF.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/暫定素材包/Cubic-11-main/Cubic-11-main/fonts/ttf/Cubic_11 SDF.asset" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/遊戲場景/第一關.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/遊戲場景/第一關.unity" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -113,7 +108,8 @@
       <workItem from="1786799005276" duration="2402000" />
       <workItem from="1787237884779" duration="112000" />
       <workItem from="1787238166209" duration="835000" />
-      <workItem from="1789316203905" duration="3619000" />
+      <workItem from="1789316203905" duration="3905000" />
+      <workItem from="1789454547802" duration="1663000" />
     </task>
     <servers />
   </component>
