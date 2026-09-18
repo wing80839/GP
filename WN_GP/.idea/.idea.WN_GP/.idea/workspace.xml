@@ -6,8 +6,9 @@
   <component name="ChangeListManager">
     <list default="true" id="c87600ff-7bef-4ed3-87eb-697061aac49a" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.WN_GP/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.WN_GP/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Script/第一關/TransitionManager.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Script/第一關/TransitionManager.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Shader/Mat_EllipseFade.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Shader/Mat_EllipseFade.mat" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/遊戲場景/第一關.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/遊戲場景/第一關.unity" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ProjectSettings/EditorBuildSettings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/ProjectSettings/EditorBuildSettings.asset" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -111,6 +112,7 @@
       <workItem from="1789316203905" duration="3905000" />
       <workItem from="1789454547802" duration="2267000" />
       <workItem from="1789713299980" duration="464000" />
+      <workItem from="1789714438686" duration="190000" />
     </task>
     <servers />
   </component>
