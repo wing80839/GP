@@ -6365,7 +6365,10 @@ MonoBehaviour:
   - {fileID: 1695250907}
   - {fileID: 1717849826}
   - {fileID: 1453555232}
-  optionLabels: []
+  optionLabels:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
   resultPanel: {fileID: 843663642}
   resultText: {fileID: 247974399}
 --- !u!1 &632611614
@@ -6732,7 +6735,10 @@ MonoBehaviour:
   - {fileID: 524430294}
   - {fileID: 522977939}
   - {fileID: 1855473853}
-  optionLabels: []
+  optionLabels:
+  - {fileID: 859009179}
+  - {fileID: 1898843425}
+  - {fileID: 962771505}
   resultPanel: {fileID: 1552305494}
   resultText: {fileID: 627984498}
 --- !u!114 &658882999
@@ -6782,7 +6788,7 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0, y: 0}
+  m_Offset: {x: 0, y: 0.011919662}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0, y: 0}
@@ -6792,7 +6798,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 1, y: 0.6461606}
   m_EdgeRadius: 0
 --- !u!1 &663208558
 GameObject:
@@ -22521,7 +22527,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &2016783370
 Transform:
   m_ObjectHideFlags: 0

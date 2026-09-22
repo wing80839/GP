@@ -6,9 +6,11 @@
   <component name="ChangeListManager">
     <list default="true" id="c87600ff-7bef-4ed3-87eb-697061aac49a" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.WN_GP/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.WN_GP/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Script/第一關/TransitionManager.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Script/第一關/TransitionManager.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Shader/Mat_EllipseFade.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Shader/Mat_EllipseFade.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/暫定素材包/Cubic-11-main/Cubic-11-main/fonts/ttf/Cubic_11 SDF.asset" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/暫定素材包/Cubic-11-main/Cubic-11-main/fonts/ttf/Cubic_11 SDF.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/暫定素材包/Unity-TMPro-Chinese-Font-master/Unity-TMPro-Chinese-Font-master/FontUpdatePackage.sln.meta" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/遊戲場景/第一關.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/遊戲場景/第一關.unity" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ProjectSettings/Packages/com.unity.probuilder/Settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/ProjectSettings/Packages/com.unity.probuilder/Settings.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -21,6 +23,7 @@
   <component name="HighlightingSettingsPerFile">
     <setting file="file://$PROJECT_DIR$/Assets/Script/第一關/BackMainMenu.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Assets/Script/第一關/ESC.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.ugui@bb329a87fcdc/Runtime/UGUI/UI/Core/Image.cs" root0="SKIP_HIGHLIGHTING" />
   </component>
   <component name="MetaFilesCheckinStateConfiguration" checkMetaFiles="true" />
   <component name="ProjectColorInfo">{
@@ -113,6 +116,8 @@
       <workItem from="1789454547802" duration="2267000" />
       <workItem from="1789713299980" duration="464000" />
       <workItem from="1789714438686" duration="190000" />
+      <workItem from="1790056209298" duration="6000" />
+      <workItem from="1790057583169" duration="1751000" />
     </task>
     <servers />
   </component>
