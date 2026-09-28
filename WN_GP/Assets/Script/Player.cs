@@ -2,8 +2,7 @@
 
 public class Player : MonoBehaviour
 {
-    public GameObject myBag;
-    bool isOpen;
+    
 
     [Header("移動速度")]
     public float speed;
@@ -23,7 +22,7 @@ public class Player : MonoBehaviour
     void Update()
     {
         HandleMovement();
-        HandleBag();
+        
     }
 
     void HandleMovement()
@@ -69,12 +68,5 @@ public class Player : MonoBehaviour
         }
     }
 
-    void HandleBag()
-    {
-        if (Input.GetKeyDown(KeyCode.B))
-        {
-            isOpen = !isOpen;
-            myBag.SetActive(isOpen);
-        }
-    }
+   
 }

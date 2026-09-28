@@ -3,19 +3,51 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Events;
 using UnityEngine.EventSystems;
 
 public class ObjectInteraction : MonoBehaviour, Interactable
 {
     // ── 資料結構 ─────────────────────────────────────────────
 
+    public enum OptionAction
+    {
+        None,     // 一般選項：顯示結果對話
+        PickUp,   // 帶走：把 item 放進背包
+        UseItem   // 使用：跳出背包讓玩家選道具
+    }
+
     [Serializable]
     public class OptionData
     {
         public string buttonLabel;
+        public OptionAction action = OptionAction.None;
+        [Tooltip("action = PickUp 時要放進背包的道具")]
+        public ItemData item;
         [TextArea(2, 5)]
-        public string[] resultLines;        // 多行結果對話
+        public string[] resultLines;        // 多行結果對話（可用 {item} 代表道具名）
         public OptionData[] nextOptions;    // 結果後的下一層選項（留空=關閉）
+
+        [Tooltip("選到這個選項時觸發，例如理智值 +3")]
+        public UnityEvent onSelected;
+        public bool eventOnce = true;       // onSelected 只觸發一次（避免重複刷理智值）
+
+        [NonSerialized] public bool used;   // 帶走後就不再顯示這個選項
+        [NonSerialized] public bool eventFired;
+    }
+
+    [Serializable]
+    public class UseRule
+    {
+        public ItemData requiredItem;       // 用哪個道具才有效
+        public bool consumeItem = true;     // 用完從背包移除
+        public bool oneTimeOnly = true;
+        [TextArea(2, 5)]
+        public string[] successLines;       // 成功時的對話
+        public OptionData[] nextOptions;    // 成功後的下一層選項（留空=關閉）
+        public UnityEvent onSuccess;        // 例如：開門、換圖、播動畫
+
+        [NonSerialized] public bool done;
     }
 
     // ── Inspector ────────────────────────────────────────────
@@ -24,11 +56,36 @@ public class ObjectInteraction : MonoBehaviour, Interactable
     [TextArea(2, 5)]
     [SerializeField] private string[] openingLines;
 
+    [Header("鎖定狀態（例如還沒放椅子，拿不到東西）")]
+    [SerializeField] private bool startLocked = false;
+    [Tooltip("鎖定時說這些，取代主對話；鎖定時不會給道具")]
+    [TextArea(2, 5)]
+    [SerializeField] private string[] lockedLines;
+    [SerializeField] private bool showOptionsWhenLocked = true;
+
+    [Header("主對話結束後自動獲得道具（不需選項，留空=不給）")]
+    [SerializeField] private ItemData giveItem;
+    [Tooltip("已經拿過道具後，再調查時改說這些（留空=照舊說主對話，但不會再給）")]
+    [TextArea(2, 5)]
+    [SerializeField] private string[] afterGivenLines;
+    [Tooltip("拿到道具時觸發，例如把畫面上的鑰匙藏起來")]
+    [SerializeField] private UnityEvent onItemGiven;
+
     [Header("對話結束後跳出選項")]
     [SerializeField] private bool showOptionsAfter = false;
 
     [Header("選項（支援多層）")]
     [SerializeField] private OptionData[] options;
+
+    [Header("帶走")]
+    [SerializeField] private bool hideAfterPickUp = true;   // 對話結束後讓物件消失
+
+    [Header("使用道具")]
+    [SerializeField] private UseRule[] useRules;
+    [TextArea(2, 5)]
+    [SerializeField] private string[] wrongItemLines = { "對它使用「{item}」……好像沒什麼反應。" };
+    [TextArea(2, 5)]
+    [SerializeField] private string[] emptyBagLines = { "背包裡什麼都沒有。" };
 
     [Header("UI 物件")]
     [SerializeField] private GameObject dialoguePanel;
@@ -42,15 +99,33 @@ public class ObjectInteraction : MonoBehaviour, Interactable
     // ── 內部狀態 ─────────────────────────────────────────────
 
     private Canvas _canvas;
-    private int _openingIndex = 0;  // 主對話目前行
-    private int _resultIndex = 0;  // 結果對話目前行
-    private string[] _currentLines;       // 目前顯示的結果行
-    private OptionData[] _currentOptions;     // 目前層的選項
+    private int _openingIndex = 0;
+    private int _resultIndex = 0;
+    private string[] _currentLines;              // 目前顯示的結果行
+    private OptionData[] _currentOptions;        // 目前顯示中的這一層選項
+    private OptionData[] _pendingNext;           // 結果對話結束後要跳的選項
+    private readonly List<OptionData> _visible = new List<OptionData>();  // 實際顯示的按鈕
+    private string _itemName = "";
+    private bool _hideOnClose;
+    private bool _given;                 // giveItem 是否已給過
+    private string[] _activeOpening;     // 這次要說的主對話
+    private bool _locked;
+
+    // 目前正在對話的物件。多個物件共用同一個對話框時，只讓這個物件回應點擊
+    private static ObjectInteraction _active;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatic() => _active = null;
+
+    // 給 UnityEvent 呼叫：例如椅子放好後解鎖書櫃
+    public void Unlock() => _locked = false;
+    public void Lock() => _locked = true;
 
     // ── 生命週期 ─────────────────────────────────────────────
 
     private void Awake()
     {
+        _locked = startLocked;
         _canvas = GetComponentInChildren<Canvas>(true);
         if (_canvas) _canvas.gameObject.SetActive(false);
         if (dialoguePanel) dialoguePanel.SetActive(false);
@@ -60,10 +135,7 @@ public class ObjectInteraction : MonoBehaviour, Interactable
 
     private void Start()
     {
-        // 點擊主對話框推進
         AddClickEvent(dialoguePanel, OnDialogueClicked);
-
-        // 點擊結果框推進結果對話
         AddClickEvent(resultPanel, OnResultClicked);
     }
 
@@ -71,6 +143,9 @@ public class ObjectInteraction : MonoBehaviour, Interactable
 
     public void TriggerAction()
     {
+        if (_active != null && _active != this) return;   // 別的物件正在對話
+        _active = this;
+
         _openingIndex = 0;
         _currentOptions = options;
 
@@ -81,29 +156,45 @@ public class ObjectInteraction : MonoBehaviour, Interactable
 
         Player.CanMove = false;
 
-        // 顯示第一行主對話
-        if (openingLines != null && openingLines.Length > 0)
-            dialogueText.text = openingLines[0];
+        // 已經拿過道具 → 改說 afterGivenLines
+        if (_locked)
+            _activeOpening = lockedLines;
+        else if (_given && afterGivenLines != null && afterGivenLines.Length > 0)
+            _activeOpening = afterGivenLines;
+        else
+            _activeOpening = openingLines;
+
+        if (_activeOpening != null && _activeOpening.Length > 0)
+            dialogueText.text = _activeOpening[0];
     }
 
     // ── 主對話推進 ───────────────────────────────────────────
 
     private void OnDialogueClicked()
     {
+        if (_active != this) return;
+
         _openingIndex++;
 
-        if (openingLines != null && _openingIndex < openingLines.Length)
+        if (_activeOpening != null && _openingIndex < _activeOpening.Length)
         {
-            // 還有下一行主對話
-            dialogueText.text = openingLines[_openingIndex];
+            dialogueText.text = _activeOpening[_openingIndex];
         }
         else
         {
-            // 主對話結束
-            if (showOptionsAfter)
+            // 主對話說完 → 自動獲得道具（只給一次）
+            if (!_locked && giveItem != null && !_given)
+            {
+                Inventory.Instance.Add(giveItem);
+                _given = true;
+                onItemGiven?.Invoke();
+            }
+
+            bool show = _locked ? showOptionsWhenLocked : showOptionsAfter;
+            if (show)
             {
                 dialoguePanel.SetActive(false);
-                ShowOptions(_currentOptions);
+                ShowOptions(options);
             }
             else
             {
@@ -116,22 +207,28 @@ public class ObjectInteraction : MonoBehaviour, Interactable
 
     private void ShowOptions(OptionData[] opts)
     {
-        if (opts == null || opts.Length == 0) { CloseAll(); return; }
-
         _currentOptions = opts;
+
+        // 過濾掉已經帶走的選項
+        _visible.Clear();
+        if (opts != null)
+            foreach (var o in opts)
+                if (o != null && !(o.action == OptionAction.PickUp && o.used))
+                    _visible.Add(o);
+
+        if (_visible.Count == 0) { CloseAll(); return; }
 
         if (dialoguePanel) dialoguePanel.SetActive(false);
         if (resultPanel) resultPanel.SetActive(false);
 
-        // 設定按鈕
         for (int i = 0; i < optionButtons.Length; i++)
         {
             if (optionButtons[i] == null) continue;
 
-            if (i < opts.Length)
+            if (i < _visible.Count)
             {
                 if (i < optionLabels.Length && optionLabels[i] != null)
-                    optionLabels[i].text = opts[i].buttonLabel;
+                    optionLabels[i].text = _visible[i].buttonLabel;
 
                 optionButtons[i].gameObject.SetActive(true);
                 optionButtons[i].onClick.RemoveAllListeners();
@@ -150,56 +247,141 @@ public class ObjectInteraction : MonoBehaviour, Interactable
 
     private void OnOptionSelected(int idx)
     {
-        if (_currentOptions == null || idx >= _currentOptions.Length) return;
+        if (idx >= _visible.Count) return;
+        var opt = _visible[idx];
 
-        var opt = _currentOptions[idx];
-
-        // 沒有結果文字 → 直接關閉
-        if (opt.resultLines == null || opt.resultLines.Length == 0)
+        if (!(opt.eventOnce && opt.eventFired))
         {
-            CloseAll();
+            opt.eventFired = true;
+            opt.onSelected?.Invoke();
+        }
+
+        switch (opt.action)
+        {
+            case OptionAction.PickUp:
+                DoPickUp(opt);
+                break;
+            case OptionAction.UseItem:
+                OpenBagForUse();
+                break;
+            default:
+                ShowResult(opt.resultLines, opt.nextOptions);
+                break;
+        }
+    }
+
+    // ── 帶走 ─────────────────────────────────────────────────
+
+    private void DoPickUp(OptionData opt)
+    {
+        if (opt.item == null)
+        {
+            Debug.LogWarning($"{name}：PickUp 選項沒有設定 item");
+            ShowResult(opt.resultLines, opt.nextOptions);
             return;
         }
 
-        // 顯示結果對話（第一行）
-        _currentLines = opt.resultLines;
-        _resultIndex = 0;
+        Inventory.Instance.Add(opt.item);
+        opt.used = true;
+        _itemName = opt.item.itemName;
+        if (hideAfterPickUp) _hideOnClose = true;
 
-        if (optionsPanel) optionsPanel.SetActive(false);
-        resultText.text = _currentLines[0];
-        if (resultPanel) resultPanel.SetActive(true);
-
-        // 記住這個選項的下一層選項
-        _currentOptions = opt.nextOptions;
+        var lines = (opt.resultLines != null && opt.resultLines.Length > 0)
+            ? opt.resultLines
+            : new[] { "獲得了「{item}」。" };
+        ShowResult(lines, opt.nextOptions);
     }
 
-    // ── 結果對話推進 ─────────────────────────────────────────
+    // ── 使用道具 ─────────────────────────────────────────────
+
+    private void OpenBagForUse()
+    {
+        if (optionsPanel) optionsPanel.SetActive(false);
+
+        var layer = _currentOptions;   // 記住目前這層，取消或用錯時回來
+
+        if (Inventory.Instance.Items.Count == 0)
+        {
+            ShowResult(emptyBagLines, layer);
+            return;
+        }
+
+        InventoryUI.Instance.OpenForSelection(
+            "要使用哪個道具？",
+            item => OnItemChosen(item, layer),
+            () => ShowOptions(layer));      // 按關閉 → 回到選項
+    }
+
+    private void OnItemChosen(ItemData item, OptionData[] layer)
+    {
+        _itemName = item.itemName;
+
+        UseRule rule = null;
+        if (useRules != null)
+            foreach (var r in useRules)
+                if (r.requiredItem == item && !(r.oneTimeOnly && r.done)) { rule = r; break; }
+
+        if (rule == null)
+        {
+            ShowResult(wrongItemLines, layer);   // 用錯 → 說完後回到同一層選項
+            return;
+        }
+
+        rule.done = true;
+        if (rule.consumeItem) Inventory.Instance.Remove(item);
+        rule.onSuccess?.Invoke();
+        ShowResult(rule.successLines, rule.nextOptions);
+    }
+
+    // ── 結果對話 ─────────────────────────────────────────────
+
+    private void ShowResult(string[] lines, OptionData[] next)
+    {
+        _pendingNext = next;
+
+        if (lines == null || lines.Length == 0) { AfterResult(); return; }
+
+        _currentLines = lines;
+        _resultIndex = 0;
+
+        if (dialoguePanel) dialoguePanel.SetActive(false);
+        if (optionsPanel) optionsPanel.SetActive(false);
+        resultText.text = Format(_currentLines[0]);
+        if (resultPanel) resultPanel.SetActive(true);
+    }
 
     private void OnResultClicked()
     {
+        if (_active != this) return;
+
         _resultIndex++;
 
-        if (_resultIndex < _currentLines.Length)
-        {
-            // 還有下一行結果
-            resultText.text = _currentLines[_resultIndex];
-        }
+        if (_currentLines != null && _resultIndex < _currentLines.Length)
+            resultText.text = Format(_currentLines[_resultIndex]);
         else
-        {
-            // 結果結束 → 跳下一層選項或關閉
-            if (_currentOptions != null && _currentOptions.Length > 0)
-                ShowOptions(_currentOptions);
-            else
-                CloseAll();
-        }
+            AfterResult();
+    }
+
+    private void AfterResult()
+    {
+        if (_pendingNext != null && _pendingNext.Length > 0)
+            ShowOptions(_pendingNext);
+        else
+            CloseAll();
     }
 
     // ── 工具 ─────────────────────────────────────────────────
 
+    private string Format(string s) => s.Replace("{item}", _itemName);
+
     private void CloseAll()
     {
+        if (_active == this) _active = null;
+
         if (_canvas) _canvas.gameObject.SetActive(false);
         Player.CanMove = true;
+
+        if (_hideOnClose) gameObject.SetActive(false);   // 帶走的物件在對話結束後消失
     }
 
     private void AddClickEvent(GameObject obj, Action callback)
