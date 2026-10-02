@@ -62,6 +62,8 @@ public class ObjectInteraction : MonoBehaviour, Interactable
     [TextArea(2, 5)]
     [SerializeField] private string[] lockedLines;
     [SerializeField] private bool showOptionsWhenLocked = true;
+    [Tooltip("鎖定對話說完後，不出選項，直接跳出背包讓玩家選道具（背包是空的就直接結束）")]
+    [SerializeField] private bool openBagWhenLocked = false;
 
     [Header("主對話結束後自動獲得道具（不需選項，留空=不給）")]
     [SerializeField] private ItemData giveItem;
@@ -81,6 +83,8 @@ public class ObjectInteraction : MonoBehaviour, Interactable
     [SerializeField] private bool hideAfterPickUp = true;   // 對話結束後讓物件消失
 
     [Header("使用道具")]
+    [Tooltip("背包是空的時候，不顯示「使用」選項")]
+    [SerializeField] private bool hideUseWhenBagEmpty = true;
     [SerializeField] private UseRule[] useRules;
     [TextArea(2, 5)]
     [SerializeField] private string[] wrongItemLines = { "對它使用「{item}」……好像沒什麼反應。" };
@@ -110,6 +114,8 @@ public class ObjectInteraction : MonoBehaviour, Interactable
     private bool _given;                 // giveItem 是否已給過
     private string[] _activeOpening;     // 這次要說的主對話
     private bool _locked;
+    private Action _afterResultAction;   // 結果對話說完後要接著做的事（例如跳出背包）
+    private bool _showingResult;         // 目前顯示的是結果對話（不是主對話）
 
     // 目前正在對話的物件。多個物件共用同一個對話框時，只讓這個物件回應點擊
     private static ObjectInteraction _active;
@@ -127,6 +133,10 @@ public class ObjectInteraction : MonoBehaviour, Interactable
     {
         _locked = startLocked;
         _canvas = GetComponentInChildren<Canvas>(true);
+
+        // 沒有另外做結果框 → 直接用主對話框顯示結果
+        if (resultPanel == null) resultPanel = dialoguePanel;
+        if (resultText == null) resultText = dialogueText;
         if (_canvas) _canvas.gameObject.SetActive(false);
         if (dialoguePanel) dialoguePanel.SetActive(false);
         if (optionsPanel) optionsPanel.SetActive(false);
@@ -135,8 +145,20 @@ public class ObjectInteraction : MonoBehaviour, Interactable
 
     private void Start()
     {
-        AddClickEvent(dialoguePanel, OnDialogueClicked);
-        AddClickEvent(resultPanel, OnResultClicked);
+        if (resultPanel == dialoguePanel)
+        {
+            // 對話框和結果框是同一個 → 依目前狀態決定點擊要推進哪一種
+            AddClickEvent(dialoguePanel, () =>
+            {
+                if (_showingResult) OnResultClicked();
+                else OnDialogueClicked();
+            });
+        }
+        else
+        {
+            AddClickEvent(dialoguePanel, OnDialogueClicked);
+            AddClickEvent(resultPanel, OnResultClicked);
+        }
     }
 
     // ── Interactable ─────────────────────────────────────────
@@ -147,6 +169,7 @@ public class ObjectInteraction : MonoBehaviour, Interactable
         _active = this;
 
         _openingIndex = 0;
+        _showingResult = false;
         _currentOptions = options;
 
         if (_canvas) _canvas.gameObject.SetActive(true);
@@ -190,6 +213,16 @@ public class ObjectInteraction : MonoBehaviour, Interactable
                 onItemGiven?.Invoke();
             }
 
+            // 鎖定中：直接跳出背包選道具
+            if (_locked && openBagWhenLocked)
+            {
+                dialoguePanel.SetActive(false);
+                if (Inventory.Instance.Items.Count == 0) { CloseAll(); return; }
+                _currentOptions = null;      // 取消或用錯道具 → 直接結束
+                OpenBagForUse();
+                return;
+            }
+
             bool show = _locked ? showOptionsWhenLocked : showOptionsAfter;
             if (show)
             {
@@ -211,12 +244,26 @@ public class ObjectInteraction : MonoBehaviour, Interactable
 
         // 過濾掉已經帶走的選項
         _visible.Clear();
+        bool bagEmpty = Inventory.Instance == null || Inventory.Instance.Items.Count == 0;
+        bool hidUse = false;
         if (opts != null)
             foreach (var o in opts)
-                if (o != null && !(o.action == OptionAction.PickUp && o.used))
-                    _visible.Add(o);
+            {
+                if (o == null) continue;
+                if (o.action == OptionAction.PickUp && o.used) continue;
+                // 背包是空的 → 不顯示「使用」
+                if (o.action == OptionAction.UseItem && hideUseWhenBagEmpty && bagEmpty) { hidUse = true; continue; }
+                _visible.Add(o);
+            }
+
+        // 「使用」被藏起來後，如果只剩「離開」這種純關閉的選項，就不用跳選項了
+        if (hidUse && _visible.TrueForAll(o => o.action == OptionAction.None
+                && (o.resultLines == null || o.resultLines.Length == 0)
+                && (o.nextOptions == null || o.nextOptions.Length == 0)))
+            _visible.Clear();
 
         if (_visible.Count == 0) { CloseAll(); return; }
+        _showingResult = false;
 
         if (dialoguePanel) dialoguePanel.SetActive(false);
         if (resultPanel) resultPanel.SetActive(false);
@@ -227,8 +274,11 @@ public class ObjectInteraction : MonoBehaviour, Interactable
 
             if (i < _visible.Count)
             {
-                if (i < optionLabels.Length && optionLabels[i] != null)
-                    optionLabels[i].text = _visible[i].buttonLabel;
+                // 沒拖 Option Labels 也沒關係，會自動找按鈕底下的文字
+                TMP_Text lbl = (optionLabels != null && i < optionLabels.Length && optionLabels[i] != null)
+                    ? optionLabels[i]
+                    : optionButtons[i].GetComponentInChildren<TMP_Text>(true);
+                if (lbl != null) lbl.text = _visible[i].buttonLabel;
 
                 optionButtons[i].gameObject.SetActive(true);
                 optionButtons[i].onClick.RemoveAllListeners();
@@ -262,7 +312,17 @@ public class ObjectInteraction : MonoBehaviour, Interactable
                 DoPickUp(opt);
                 break;
             case OptionAction.UseItem:
-                OpenBagForUse();
+                bool empty = Inventory.Instance.Items.Count == 0;
+                if (!empty && opt.resultLines != null && opt.resultLines.Length > 0)
+                {
+                    // 先說提示（例如「請選擇使用的物品。」），點掉後再跳出背包
+                    _afterResultAction = OpenBagForUse;
+                    ShowResult(opt.resultLines, null);
+                }
+                else
+                {
+                    OpenBagForUse();   // 背包是空的 → 會說 Empty Bag Lines
+                }
                 break;
             default:
                 ShowResult(opt.resultLines, opt.nextOptions);
@@ -297,6 +357,8 @@ public class ObjectInteraction : MonoBehaviour, Interactable
     private void OpenBagForUse()
     {
         if (optionsPanel) optionsPanel.SetActive(false);
+        if (resultPanel) resultPanel.SetActive(false);
+        _showingResult = false;
 
         var layer = _currentOptions;   // 記住目前這層，取消或用錯時回來
 
@@ -343,6 +405,7 @@ public class ObjectInteraction : MonoBehaviour, Interactable
 
         _currentLines = lines;
         _resultIndex = 0;
+        _showingResult = true;
 
         if (dialoguePanel) dialoguePanel.SetActive(false);
         if (optionsPanel) optionsPanel.SetActive(false);
@@ -364,6 +427,14 @@ public class ObjectInteraction : MonoBehaviour, Interactable
 
     private void AfterResult()
     {
+        if (_afterResultAction != null)
+        {
+            var action = _afterResultAction;
+            _afterResultAction = null;
+            action();
+            return;
+        }
+
         if (_pendingNext != null && _pendingNext.Length > 0)
             ShowOptions(_pendingNext);
         else
@@ -377,6 +448,8 @@ public class ObjectInteraction : MonoBehaviour, Interactable
     private void CloseAll()
     {
         if (_active == this) _active = null;
+        _afterResultAction = null;
+        _showingResult = false;
 
         if (_canvas) _canvas.gameObject.SetActive(false);
         Player.CanMove = true;
