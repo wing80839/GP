@@ -24,6 +24,9 @@ public class NPCDialogue : MonoBehaviour, Interactable
 
     // ── Inspector 設定 ────────────────────────────────────────
 
+    [Header("一進遊戲就自動播放")]
+    [SerializeField] private bool playOnStart = false;
+
     [Header("對話文本（.txt）")]
     [SerializeField] private TextAsset dialogueFile;
 
@@ -83,6 +86,8 @@ public class NPCDialogue : MonoBehaviour, Interactable
         AddClickEvent(dialoguePanel, OnDialogueClicked);
         AddClickEvent(resultPanel, ShowOptions);
         SetupOptionButtons();
+
+        if (playOnStart) TriggerAction();
     }
 
     // ── 解析文本 ─────────────────────────────────────────────
