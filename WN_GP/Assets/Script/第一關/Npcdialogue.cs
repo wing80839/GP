@@ -5,6 +5,16 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
+// NPC 對話（讀 .txt）。支援在文本裡寫選項和分支，選完選項會接著播對應的整段對話。
+//
+// 文本格式：
+//   [NPC:名字]        之後的行是這個 NPC 說的（名字留空 = 旁白）
+//   [PLAYER:名字]     之後的行是玩家說的
+//   [CHOICE]          開始列選項，下一行起每行一個：  按鈕文字 -> 標籤
+//   [LABEL:標籤]      分支的起點
+//   [GOTO:標籤]       跳到某個標籤（例如兩個分支結束後接回同一段）
+//   [END]             對話結束
+//   一句話裡要換行用 <br>
 public class NPCDialogue : MonoBehaviour, Interactable
 {
     [Serializable]
@@ -12,7 +22,7 @@ public class NPCDialogue : MonoBehaviour, Interactable
     {
         public string speakerName;  // 對應文本裡的名字
         public Sprite portrait;     // 該角色的立繪
-        public bool isPlayer;     // 是否為玩家
+        public bool isPlayer;       // 是否為玩家
     }
 
     [Serializable]
@@ -24,7 +34,7 @@ public class NPCDialogue : MonoBehaviour, Interactable
 
     // ── Inspector 設定 ────────────────────────────────────────
 
-    [Header("一進遊戲就自動播放")]
+    [Header("一進遊戲就自動播放（一般 NPC 不要勾）")]
     [SerializeField] private bool playOnStart = false;
 
     [Header("對話文本（.txt）")]
@@ -33,41 +43,55 @@ public class NPCDialogue : MonoBehaviour, Interactable
     [Header("立繪對應表（名字 → 圖片）")]
     [SerializeField] private PortraitData[] portraits;
 
-    [Header("對話結束後跳出選項")]
+    [Header("對話結束後跳出選項（文本裡沒寫 [CHOICE] 時才用）")]
     [SerializeField] private bool showOptionsAfter = false;
 
-    [Header("選項")]
+    [Header("選項（文本裡沒寫 [CHOICE] 時才用）")]
     [SerializeField] private OptionData[] options;
 
     [Header("對話框 UI")]
     [SerializeField] private GameObject dialoguePanel;
     [SerializeField] private TextMeshProUGUI speakerNameText;
     [SerializeField] private TextMeshProUGUI dialogueText;
-    [SerializeField] private Image leftPortrait;   // NPC 立繪（左）
-    [SerializeField] private Image rightPortrait;  // 玩家立繪（右）
+    [SerializeField] private Image leftPortrait;   // 玩家立繪（左）
+    [SerializeField] private Image rightPortrait;  // NPC 立繪（右）
 
     [Header("選項 UI")]
     [SerializeField] private GameObject optionsPanel;
     [SerializeField] private Button[] optionButtons;
     [SerializeField] private TextMeshProUGUI[] optionLabels;
 
-    [Header("結果 UI")]
+    [Header("結果 UI（舊的單句結果用）")]
     [SerializeField] private GameObject resultPanel;
     [SerializeField] private TextMeshProUGUI resultText;
 
     // ── 內部資料 ─────────────────────────────────────────────
 
-    private struct ParsedLine
+    private enum EntryType { Line, Choice, Label, Goto, End }
+
+    private class Entry
     {
+        public EntryType type;
         public string speakerName;
-        public string text;
+        public string text;            // Line 的內容；Label / Goto 的標籤名
         public bool isPlayer;
         public Sprite portrait;
+        public List<string> choiceTexts = new List<string>();
+        public List<string> choiceTargets = new List<string>();
     }
 
-    private List<ParsedLine> _lines = new List<ParsedLine>();
+    private readonly List<Entry> _entries = new List<Entry>();
+    private readonly Dictionary<string, int> _labels = new Dictionary<string, int>();
+    private bool _hasChoices;
+
     private Canvas _canvas;
-    private int _lineIndex = 0;
+    private int _index;
+
+    // 多個 NPC 共用同一個對話框時，只讓正在對話的那個回應點擊
+    private static NPCDialogue _active;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatic() => _active = null;
 
     // ── 生命週期 ─────────────────────────────────────────────
 
@@ -84,8 +108,7 @@ public class NPCDialogue : MonoBehaviour, Interactable
     {
         ParseDialogueFile();
         AddClickEvent(dialoguePanel, OnDialogueClicked);
-        AddClickEvent(resultPanel, ShowOptions);
-        SetupOptionButtons();
+        AddClickEvent(resultPanel, OnResultClicked);
 
         if (playOnStart) TriggerAction();
     }
@@ -94,42 +117,91 @@ public class NPCDialogue : MonoBehaviour, Interactable
 
     private void ParseDialogueFile()
     {
-        _lines.Clear();
+        _entries.Clear();
+        _labels.Clear();
+        _hasChoices = false;
         if (dialogueFile == null) return;
 
-        string currentSpeaker = "";
-        bool currentIsPlayer = false;
-        Sprite currentPortrait = null;
+        string speaker = "";
+        bool isPlayer = false;
+        Sprite portrait = null;
+        Entry choice = null;   // 正在讀的 [CHOICE] 區塊
 
         foreach (string raw in dialogueFile.text.Split('\n'))
         {
             string line = raw.Trim();
             if (string.IsNullOrEmpty(line)) continue;
 
-            // 解析說話者標記 [NPC:名字] 或 [PLAYER:名字]
-            if (line.StartsWith("[") && line.Contains(":") && line.EndsWith("]"))
-            {
-                string inner = line.Substring(1, line.Length - 2); // 去掉 [ ]
-                string[] parts = inner.Split(':');
-                string role = parts[0].ToUpper();
-                string name = parts.Length > 1 ? parts[1] : "";
+            bool isTag = line.StartsWith("[") && line.EndsWith("]");
 
-                currentSpeaker = name;
-                currentIsPlayer = role == "PLAYER";
-                currentPortrait = FindPortrait(name);
-            }
-            else
+            // 正在讀選項：每行「按鈕文字 -> 標籤」，遇到下一個 [標記] 就結束
+            if (choice != null)
             {
-                // 一般對話行
-                _lines.Add(new ParsedLine
+                if (!isTag)
                 {
-                    speakerName = currentSpeaker,
-                    text = line,
-                    isPlayer = currentIsPlayer,
-                    portrait = currentPortrait
-                });
+                    int arrow = line.LastIndexOf("->", StringComparison.Ordinal);
+                    if (arrow < 0)
+                    {
+                        Debug.LogWarning($"[對話] {dialogueFile.name}：選項「{line}」沒有寫「-> 標籤」");
+                        continue;
+                    }
+                    choice.choiceTexts.Add(line.Substring(0, arrow).Trim());
+                    choice.choiceTargets.Add(line.Substring(arrow + 2).Trim());
+                    continue;
+                }
+                choice = null;
             }
+
+            if (isTag)
+            {
+                string inner = line.Substring(1, line.Length - 2).Trim();
+                int colon = inner.IndexOf(':');
+                string key = (colon >= 0 ? inner.Substring(0, colon) : inner).Trim().ToUpper();
+                string value = colon >= 0 ? inner.Substring(colon + 1).Trim() : "";
+
+                switch (key)
+                {
+                    case "NPC":
+                    case "PLAYER":
+                        speaker = value;
+                        isPlayer = key == "PLAYER";
+                        portrait = FindPortrait(value);
+                        continue;
+                    case "CHOICE":
+                        choice = new Entry { type = EntryType.Choice };
+                        _entries.Add(choice);
+                        _hasChoices = true;
+                        continue;
+                    case "LABEL":
+                        _labels[value] = _entries.Count;
+                        _entries.Add(new Entry { type = EntryType.Label, text = value });
+                        continue;
+                    case "GOTO":
+                        _entries.Add(new Entry { type = EntryType.Goto, text = value });
+                        continue;
+                    case "END":
+                        _entries.Add(new Entry { type = EntryType.End });
+                        continue;
+                }
+                // 不認得的 [ ] 就當成一般台詞
+            }
+
+            _entries.Add(new Entry
+            {
+                type = EntryType.Line,
+                speakerName = speaker,
+                text = line,
+                isPlayer = isPlayer,
+                portrait = portrait
+            });
         }
+
+        // 檢查選項指到的標籤都存在
+        foreach (var e in _entries)
+            if (e.type == EntryType.Choice)
+                foreach (var t in e.choiceTargets)
+                    if (!_labels.ContainsKey(t))
+                        Debug.LogWarning($"[對話] {dialogueFile.name}：找不到標籤 [LABEL:{t}]");
     }
 
     private Sprite FindPortrait(string name)
@@ -144,43 +216,75 @@ public class NPCDialogue : MonoBehaviour, Interactable
 
     public void TriggerAction()
     {
-        _lineIndex = 0;
+        if (_active != null && _active != this) return;
+        _active = this;
+
+        _index = 0;
         if (_canvas) _canvas.gameObject.SetActive(true);
         if (optionsPanel) optionsPanel.SetActive(false);
         if (resultPanel) resultPanel.SetActive(false);
         if (dialoguePanel) dialoguePanel.SetActive(true);
         Player.CanMove = false;
-        ShowLine(_lineIndex);
+        Advance();
     }
 
     // ── 對話推進 ─────────────────────────────────────────────
 
     private void OnDialogueClicked()
     {
-        _lineIndex++;
-        if (_lineIndex < _lines.Count)
+        if (_active != this) return;
+        if (optionsPanel && optionsPanel.activeSelf) return;   // 選項出現時要點按鈕
+        _index++;
+        Advance();
+    }
+
+    // 從 _index 開始，一路處理標記，直到停在一句台詞或一組選項
+    private void Advance()
+    {
+        int guard = 0;
+        while (_index < _entries.Count && guard++ < 1000)
         {
-            ShowLine(_lineIndex);
+            var e = _entries[_index];
+            switch (e.type)
+            {
+                case EntryType.Line:
+                    if (dialoguePanel) dialoguePanel.SetActive(true);
+                    ShowLine(e);
+                    return;
+
+                case EntryType.Choice:
+                    ShowChoice(e);
+                    return;
+
+                case EntryType.Label:
+                    _index++;
+                    continue;
+
+                case EntryType.Goto:
+                    if (_labels.TryGetValue(e.text, out int target)) _index = target;
+                    else { Debug.LogWarning($"[對話] 找不到標籤 {e.text}"); _index++; }
+                    continue;
+
+                case EntryType.End:
+                    CloseAll();
+                    return;
+            }
+        }
+
+        // 文本播完
+        if (!_hasChoices && showOptionsAfter && options != null && options.Length > 0)
+        {
+            if (dialoguePanel) dialoguePanel.SetActive(false);
+            ShowInspectorOptions();
         }
         else
         {
-            if (showOptionsAfter)
-            {
-                dialoguePanel.SetActive(false);
-                ShowOptions();
-            }
-            else
-            {
-                CloseAll();
-            }
+            CloseAll();
         }
     }
 
-    private void ShowLine(int index)
+    private void ShowLine(Entry line)
     {
-        if (index >= _lines.Count) return;
-        var line = _lines[index];
-
         if (speakerNameText) speakerNameText.text = line.speakerName;
         if (dialogueText) dialogueText.text = line.text;
 
@@ -206,16 +310,35 @@ public class NPCDialogue : MonoBehaviour, Interactable
         }
     }
 
-    // ── 選項 ─────────────────────────────────────────────────
+    // ── 文本裡的選項 [CHOICE] ─────────────────────────────────
 
-    private void ShowOptions()
+    private void ShowChoice(Entry choice)
     {
-        if (dialoguePanel) dialoguePanel.SetActive(false);
+        // 對話框保留著（顯示選項前的最後一句），選項疊在上面
+        SetupButtons(choice.choiceTexts, i =>
+        {
+            if (optionsPanel) optionsPanel.SetActive(false);
+            string target = choice.choiceTargets[i];
+            if (_labels.TryGetValue(target, out int idx)) _index = idx;
+            else { Debug.LogWarning($"[對話] 找不到標籤 {target}"); _index++; }
+            Advance();
+        });
+        if (optionsPanel) optionsPanel.SetActive(true);
+    }
+
+    // ── Inspector 裡的舊式選項（單句結果） ─────────────────────
+
+    private void ShowInspectorOptions()
+    {
+        var labels = new List<string>();
+        foreach (var o in options) labels.Add(o.buttonLabel);
+
+        SetupButtons(labels, OnInspectorOptionSelected);
         if (resultPanel) resultPanel.SetActive(false);
         if (optionsPanel) optionsPanel.SetActive(true);
     }
 
-    private void OnOptionSelected(int idx)
+    private void OnInspectorOptionSelected(int idx)
     {
         if (options == null || idx >= options.Length) return;
         string text = options[idx].resultText;
@@ -225,26 +348,42 @@ public class NPCDialogue : MonoBehaviour, Interactable
         if (resultPanel) resultPanel.SetActive(true);
     }
 
-    private void SetupOptionButtons()
+    private void OnResultClicked()
     {
-        int count = Mathf.Min(
-            options != null ? options.Length : 0,
-            optionButtons != null ? optionButtons.Length : 0
-        );
-        for (int i = 0; i < (optionButtons?.Length ?? 0); i++)
+        if (_active != this) return;
+        if (resultPanel) resultPanel.SetActive(false);
+        ShowInspectorOptions();
+    }
+
+    // ── 按鈕 ─────────────────────────────────────────────────
+
+    private void SetupButtons(List<string> labels, Action<int> onSelect)
+    {
+        if (optionButtons == null) return;
+
+        if (labels.Count > optionButtons.Length)
+            Debug.LogWarning($"[對話] 有 {labels.Count} 個選項，但只有 {optionButtons.Length} 顆按鈕");
+
+        for (int i = 0; i < optionButtons.Length; i++)
         {
-            if (optionButtons[i] == null) continue;
-            if (i < count)
+            var btn = optionButtons[i];
+            if (btn == null) continue;
+
+            if (i < labels.Count)
             {
-                if (i < optionLabels.Length && optionLabels[i] != null)
-                    optionLabels[i].text = options[i].buttonLabel;
-                optionButtons[i].gameObject.SetActive(true);
+                TMP_Text lbl = (optionLabels != null && i < optionLabels.Length && optionLabels[i] != null)
+                    ? optionLabels[i]
+                    : btn.GetComponentInChildren<TMP_Text>(true);
+                if (lbl) lbl.text = labels[i];
+
+                btn.gameObject.SetActive(true);
+                btn.onClick.RemoveAllListeners();
                 int idx = i;
-                optionButtons[i].onClick.AddListener(() => OnOptionSelected(idx));
+                btn.onClick.AddListener(() => onSelect(idx));
             }
             else
             {
-                optionButtons[i].gameObject.SetActive(false);
+                btn.gameObject.SetActive(false);
             }
         }
     }
@@ -253,6 +392,8 @@ public class NPCDialogue : MonoBehaviour, Interactable
 
     private void CloseAll()
     {
+        if (_active == this) _active = null;
+        if (optionsPanel) optionsPanel.SetActive(false);
         if (_canvas) _canvas.gameObject.SetActive(false);
         Player.CanMove = true;
     }
