@@ -30,21 +30,38 @@ public class CameraPan : MonoBehaviour
     public int CurrentIndex => _index;
     public bool IsMoving => points.Length > 0 && (Vector2)transform.localPosition != points[_index];
 
-    private bool _ready;   // 定點有沒有設定好
+    private bool _ready;    // 定點有沒有設定好
+    private bool _jumped;   // 已經被 JumpTo 指定過位置（例如從別的區域切過來）
 
-    private void Start()
+    private void CheckReady()
     {
         // 定點全是 (0,0) 代表還沒設定，不要亂移動攝影機
         _ready = false;
         foreach (var p in points) if (p != Vector2.zero) { _ready = true; break; }
+    }
+
+    private void Start()
+    {
+        CheckReady();
         if (!_ready)
         {
             Debug.LogWarning($"[鏡頭] 「{name}」的 Points 還沒設定，攝影機先不移動");
             return;
         }
+        if (_jumped) return;   // 切換鏡頭時已經指定好位置，不要蓋掉
 
         _index = Mathf.Clamp(startIndex, 0, Mathf.Max(0, points.Length - 1));
         if (snapOnStart && points.Length > 0) SetPosition(points[_index]);
+    }
+
+    // 直接「瞬間」放到第幾個定點（不滑動）。切換鏡頭時用來決定從哪裡出現
+    public void JumpTo(int index)
+    {
+        if (points.Length == 0) return;
+        CheckReady();
+        _index = Mathf.Clamp(index, 0, points.Length - 1);
+        _jumped = true;
+        if (_ready) SetPosition(points[_index]);
     }
 
     private void Update()

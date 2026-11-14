@@ -3569,6 +3569,7 @@ MonoBehaviour:
   - {fileID: 398712218}
   turnOff:
   - {fileID: 1150467243}
+  entryPoint: 2
   waitForDialogueEnd: 1
   clickToSwitch: 1
   onSwitched:
@@ -7809,6 +7810,7 @@ MonoBehaviour:
   - {fileID: 398712218}
   turnOff:
   - {fileID: 1378514737}
+  entryPoint: 0
   waitForDialogueEnd: 1
   clickToSwitch: 1
   onSwitched:
@@ -8505,6 +8507,7 @@ MonoBehaviour:
   - {fileID: 400419884}
   turnOff:
   - {fileID: 978444180}
+  entryPoint: 1
   waitForDialogueEnd: 1
   clickToSwitch: 1
   onSwitched:
@@ -17388,6 +17391,7 @@ MonoBehaviour:
   - {fileID: 1811372945}
   turnOff:
   - {fileID: 398712218}
+  entryPoint: 0
   waitForDialogueEnd: 1
   clickToSwitch: 1
   onSwitched:
@@ -19181,6 +19185,7 @@ MonoBehaviour:
   - {fileID: 978444180}
   turnOff:
   - {fileID: 1150467243}
+  entryPoint: 2
   waitForDialogueEnd: 1
   clickToSwitch: 1
   onSwitched:
@@ -22854,6 +22859,7 @@ MonoBehaviour:
   - {fileID: 398712218}
   turnOff:
   - {fileID: 1811372945}
+  entryPoint: 2
   waitForDialogueEnd: 1
   clickToSwitch: 1
   onSwitched:
@@ -29433,6 +29439,7 @@ MonoBehaviour:
   - {fileID: 400419884}
   turnOff:
   - {fileID: 398712218}
+  entryPoint: 2
   waitForDialogueEnd: 1
   clickToSwitch: 1
   onSwitched:
@@ -30042,6 +30049,7 @@ MonoBehaviour:
   - {fileID: 1150467243}
   turnOff:
   - {fileID: 398712218}
+  entryPoint: 2
   waitForDialogueEnd: 1
   clickToSwitch: 1
   onSwitched:
@@ -35380,6 +35388,7 @@ MonoBehaviour:
   - {fileID: 1150467243}
   turnOff:
   - {fileID: 978444180}
+  entryPoint: 1
   waitForDialogueEnd: 1
   clickToSwitch: 1
   onSwitched:
@@ -39562,6 +39571,7 @@ MonoBehaviour:
   - {fileID: 978444180}
   turnOff:
   - {fileID: 400419884}
+  entryPoint: 0
   waitForDialogueEnd: 1
   clickToSwitch: 1
   onSwitched:
@@ -39720,6 +39730,7 @@ MonoBehaviour:
   - {fileID: 1378514737}
   turnOff:
   - {fileID: 398712218}
+  entryPoint: 0
   waitForDialogueEnd: 1
   clickToSwitch: 1
   onSwitched:
@@ -42679,6 +42690,7 @@ MonoBehaviour:
   - {fileID: 398712218}
   turnOff:
   - {fileID: 400419884}
+  entryPoint: 0
   waitForDialogueEnd: 1
   clickToSwitch: 1
   onSwitched:
