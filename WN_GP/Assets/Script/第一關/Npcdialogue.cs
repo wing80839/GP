@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Events;
 using UnityEngine.EventSystems;
 
 // NPC 對話（讀 .txt）。支援在文本裡寫選項和分支，選完選項會接著播對應的整段對話。
@@ -14,6 +15,7 @@ using UnityEngine.EventSystems;
 //   [LABEL:標籤]      分支的起點
 //   [GOTO:標籤]       跳到某個標籤（例如兩個分支結束後接回同一段）
 //   [END]             對話結束
+//   [EVENT:名字]      觸發 Inspector「事件」清單裡同名的事件（例如切鏡頭），然後繼續往下播
 //   一句話裡要換行用 <br>
 public class NPCDialogue : MonoBehaviour, Interactable
 {
@@ -23,6 +25,13 @@ public class NPCDialogue : MonoBehaviour, Interactable
         public string speakerName;  // 對應文本裡的名字
         public Sprite portrait;     // 該角色的立繪
         public bool isPlayer;       // 是否為玩家
+    }
+
+    [Serializable]
+    public class NamedEvent
+    {
+        public string eventName;    // 對應文本裡 [EVENT:名字]
+        public UnityEvent onEvent;  // 要做的事
     }
 
     [Serializable]
@@ -42,6 +51,9 @@ public class NPCDialogue : MonoBehaviour, Interactable
 
     [Header("立繪對應表（名字 → 圖片）")]
     [SerializeField] private PortraitData[] portraits;
+
+    [Header("事件（文本裡寫 [EVENT:名字] 時觸發）")]
+    [SerializeField] private NamedEvent[] events;
 
     [Header("對話結束後跳出選項（文本裡沒寫 [CHOICE] 時才用）")]
     [SerializeField] private bool showOptionsAfter = false;
@@ -67,7 +79,7 @@ public class NPCDialogue : MonoBehaviour, Interactable
 
     // ── 內部資料 ─────────────────────────────────────────────
 
-    private enum EntryType { Line, Choice, Label, Goto, End }
+    private enum EntryType { Line, Choice, Label, Goto, End, Event }
 
     private class Entry
     {
@@ -182,6 +194,9 @@ public class NPCDialogue : MonoBehaviour, Interactable
                     case "END":
                         _entries.Add(new Entry { type = EntryType.End });
                         continue;
+                    case "EVENT":
+                        _entries.Add(new Entry { type = EntryType.Event, text = value });
+                        continue;
                 }
                 // 不認得的 [ ] 就當成一般台詞
             }
@@ -228,6 +243,18 @@ public class NPCDialogue : MonoBehaviour, Interactable
         Advance();
     }
 
+    // 只會觸發一次（給「進房間自動開始對話」這類用途，避免每次進來都重播）
+    private bool _triggeredOnce;
+    public void TriggerOnce()
+    {
+        if (_triggeredOnce) return;
+        _triggeredOnce = true;
+        TriggerAction();
+    }
+
+    // 標記成「已經播過」，之後 TriggerOnce 就不會再播（例如這段對話已經在別的地方播完了）
+    public void MarkAsPlayed() => _triggeredOnce = true;
+
     // ── 對話推進 ─────────────────────────────────────────────
 
     private void OnDialogueClicked()
@@ -268,6 +295,11 @@ public class NPCDialogue : MonoBehaviour, Interactable
                 case EntryType.End:
                     CloseAll();
                     return;
+
+                case EntryType.Event:
+                    FireEvent(e.text);
+                    _index++;
+                    continue;
             }
         }
 
@@ -389,6 +421,19 @@ public class NPCDialogue : MonoBehaviour, Interactable
     }
 
     // ── 工具 ─────────────────────────────────────────────────
+
+    private void FireEvent(string eventName)
+    {
+        if (events != null)
+            foreach (var ev in events)
+                if (ev != null && ev.eventName == eventName)
+                {
+                    Debug.Log($"[對話] 觸發事件 {eventName}");
+                    ev.onEvent?.Invoke();
+                    return;
+                }
+        Debug.LogWarning($"[對話] 找不到事件「{eventName}」，請在 Inspector 的 Events 裡加一個同名的");
+    }
 
     private void CloseAll()
     {
