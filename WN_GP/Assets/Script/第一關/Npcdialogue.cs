@@ -16,6 +16,10 @@ using UnityEngine.EventSystems;
 //   [GOTO:標籤]       跳到某個標籤（例如兩個分支結束後接回同一段）
 //   [END]             對話結束
 //   [EVENT:名字]      觸發 Inspector「事件」清單裡同名的事件（例如切鏡頭），然後繼續往下播
+//   [SET:記號]        記下一個記號（例如「見過病友B」），整個遊戲都記得
+//   [IF:記號 -> 標籤] 如果已經有這個記號，就跳到標籤；沒有就繼續往下
+//   [IFITEM:道具名 -> 標籤] 如果背包裡有這個道具（看 Item Name），就跳到標籤
+//   [TAKE:道具名]     從背包拿走這個道具（例如交給 NPC）
 //   一句話裡要換行用 <br>
 public class NPCDialogue : MonoBehaviour, Interactable
 {
@@ -79,7 +83,7 @@ public class NPCDialogue : MonoBehaviour, Interactable
 
     // ── 內部資料 ─────────────────────────────────────────────
 
-    private enum EntryType { Line, Choice, Label, Goto, End, Event }
+    private enum EntryType { Line, Choice, Label, Goto, End, Event, Set, If, IfItem, Take }
 
     private class Entry
     {
@@ -197,6 +201,30 @@ public class NPCDialogue : MonoBehaviour, Interactable
                     case "EVENT":
                         _entries.Add(new Entry { type = EntryType.Event, text = value });
                         continue;
+                    case "SET":
+                        _entries.Add(new Entry { type = EntryType.Set, text = value });
+                        continue;
+                    case "TAKE":
+                        _entries.Add(new Entry { type = EntryType.Take, text = value });
+                        continue;
+                    case "IF":
+                    case "IFITEM":
+                        {
+                            int arrow = value.LastIndexOf("->", StringComparison.Ordinal);
+                            if (arrow < 0)
+                            {
+                                Debug.LogWarning($"[對話] {dialogueFile.name}：[IF:{value}] 要寫成 [IF:記號 -> 標籤]");
+                                continue;
+                            }
+                            var ifEntry = new Entry
+                            {
+                                type = key == "IFITEM" ? EntryType.IfItem : EntryType.If,
+                                text = value.Substring(0, arrow).Trim()
+                            };
+                            ifEntry.choiceTargets.Add(value.Substring(arrow + 2).Trim());
+                            _entries.Add(ifEntry);
+                            continue;
+                        }
                 }
                 // 不認得的 [ ] 就當成一般台詞
             }
@@ -213,7 +241,7 @@ public class NPCDialogue : MonoBehaviour, Interactable
 
         // 檢查選項指到的標籤都存在
         foreach (var e in _entries)
-            if (e.type == EntryType.Choice)
+            if (e.type == EntryType.Choice || e.type == EntryType.If || e.type == EntryType.IfItem)
                 foreach (var t in e.choiceTargets)
                     if (!_labels.ContainsKey(t))
                         Debug.LogWarning($"[對話] {dialogueFile.name}：找不到標籤 [LABEL:{t}]");
@@ -250,6 +278,14 @@ public class NPCDialogue : MonoBehaviour, Interactable
         if (_triggeredOnce) return;
         _triggeredOnce = true;
         TriggerAction();
+    }
+
+    // 換成另一份對話文本（例如劇情進展後，同一個 NPC 說新的話）
+    public void SetDialogueFile(TextAsset file)
+    {
+        dialogueFile = file;
+        ParseDialogueFile();
+        Debug.Log($"[對話] 「{name}」換成文本「{(file ? file.name : "無")}」");
     }
 
     // 標記成「已經播過」，之後 TriggerOnce 就不會再播（例如這段對話已經在別的地方播完了）
@@ -300,6 +336,34 @@ public class NPCDialogue : MonoBehaviour, Interactable
                     FireEvent(e.text);
                     _index++;
                     continue;
+
+                case EntryType.Set:
+                    GameFlags.Set(e.text);
+                    _index++;
+                    continue;
+
+                case EntryType.If:
+                    if (GameFlags.Has(e.text) && _labels.TryGetValue(e.choiceTargets[0], out int ifTarget))
+                        _index = ifTarget;
+                    else
+                        _index++;
+                    continue;
+
+                case EntryType.IfItem:
+                    if (FindItem(e.text) != null && _labels.TryGetValue(e.choiceTargets[0], out int itemTarget))
+                        _index = itemTarget;
+                    else
+                        _index++;
+                    continue;
+
+                case EntryType.Take:
+                    {
+                        var item = FindItem(e.text);
+                        if (item != null) Inventory.Instance.Remove(item);
+                        else Debug.LogWarning($"[對話] 背包裡沒有「{e.text}」，沒辦法拿走");
+                        _index++;
+                        continue;
+                    }
             }
         }
 
@@ -421,6 +485,15 @@ public class NPCDialogue : MonoBehaviour, Interactable
     }
 
     // ── 工具 ─────────────────────────────────────────────────
+
+    // 用道具名稱（Item Name，或道具檔的檔名）在背包裡找道具
+    private static ItemData FindItem(string itemName)
+    {
+        if (Inventory.Instance == null) return null;
+        foreach (var it in Inventory.Instance.Items)
+            if (it != null && (it.itemName == itemName || it.name == itemName)) return it;
+        return null;
+    }
 
     private void FireEvent(string eventName)
     {
