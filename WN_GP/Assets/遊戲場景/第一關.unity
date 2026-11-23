@@ -8414,7 +8414,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &400419885
 Transform:
   m_ObjectHideFlags: 0
@@ -14124,6 +14124,7 @@ GameObject:
   - component: {fileID: 631398689}
   - component: {fileID: 631398690}
   - component: {fileID: 631398691}
+  - component: {fileID: 631398692}
   m_Layer: 0
   m_Name: "\u6905\u5B50"
   m_TagString: Untagged
@@ -14385,6 +14386,21 @@ MonoBehaviour:
   - {fileID: 0}
   resultPanel: {fileID: 843663642}
   resultText: {fileID: 247974399}
+--- !u!114 &631398692
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 631398685}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 52c874c840989c648957638c9a56eff8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CursorHover
+  showHover: 1
+  customCursor: {fileID: 2800000, guid: f96f65fe33c958343a00a210390176bc, type: 3}
+  customHotspot: {x: 0, y: 0}
 --- !u!1 &632611614
 GameObject:
   m_ObjectHideFlags: 0
@@ -35165,35 +35181,13 @@ GameObject:
   - component: {fileID: 1575783657}
   - component: {fileID: 1575783656}
   - component: {fileID: 1575783655}
-  - component: {fileID: 1575783654}
   m_Layer: 0
   m_Name: "\u72D0\u72F8\u75C5\u623F\u93E1\u982D"
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1575783654
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1575783653}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 27c1527118a29354aa79624095106b2d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CameraPan
-  points:
-  - {x: -4.1, y: -1.8}
-  - {x: -0.38, y: -1.8}
-  - {x: 4.09, y: -1.8}
-  startIndex: 0
-  snapOnStart: 1
-  speed: 10
-  leftArrow: {fileID: 2074391767}
-  rightArrow: {fileID: 737810136}
+  m_IsActive: 0
 --- !u!114 &1575783655
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -35281,7 +35275,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 3.82
+  orthographic size: 2.87
   m_Depth: 0
   m_CullingMask:
     serializedVersion: 2
@@ -35306,7 +35300,7 @@ Transform:
   m_GameObject: {fileID: 1575783653}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 2.2610798, y: -1.4940205, z: -10}
+  m_LocalPosition: {x: 2.64, y: -0.65, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -46019,7 +46013,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &2012731534
 Transform:
   m_ObjectHideFlags: 0
@@ -48394,6 +48388,56 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2083166792}
   m_CullTransparentMesh: 1
+--- !u!1 &2084090913
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2084090914}
+  - component: {fileID: 2084090915}
+  m_Layer: 0
+  m_Name: "\u9F20\u6A19"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2084090914
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2084090913}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2084090915
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2084090913}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c2c7b190803511c448304b46a6bce240, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CursorManager
+  detectMode: 1
+  includeUIButtons: 1
+  defaultCursor: {fileID: 2800000, guid: 104803aa47b2e9446be6e09db82065c4, type: 3}
+  defaultHotspot: {x: 0, y: 0}
+  hoverCursor: {fileID: 2800000, guid: f96f65fe33c958343a00a210390176bc, type: 3}
+  hoverHotspot: {x: 0, y: 0}
 --- !u!1 &2088451262
 GameObject:
   m_ObjectHideFlags: 0
@@ -50482,3 +50526,4 @@ SceneRoots:
   - {fileID: 22742884}
   - {fileID: 2116422486}
   - {fileID: 829215321}
+  - {fileID: 2084090914}
