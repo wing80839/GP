@@ -1,5 +1,4 @@
 ﻿using System;
-using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -19,8 +18,21 @@ public class InventorySlotUI : MonoBehaviour
     [Tooltip("圖片離格子邊緣的距離")]
     [SerializeField] private float iconPadding = 6f;
 
+    public ItemData Item { get; private set; }
+
+    // 被選起來時顯示半透明底色
+    public void SetSelected(bool on)
+    {
+        var g = button.targetGraphic;
+        if (g == null || g == icon) return;
+        var c = g.color;
+        c.a = on ? 0.45f : (transparentBackground ? 0f : 1f);
+        g.color = c;
+    }
+
     public void Setup(ItemData item, Action<ItemData> onClick)
     {
+        Item = item;
         bool hasIcon = item.icon != null;
 
         // 圖片：填滿格子（留一點邊），保持比例
